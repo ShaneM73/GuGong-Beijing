@@ -1,0 +1,8 @@
+{
+  "name": "gugong-beijing",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Interactive 3D model of the Forbidden City and the Beijing Central Axis",
+  "scripts": { "build": "bash build.sh" },
+  "devDependencies": { "esbuild": "^0.24.0", "three": "0.160.0" }
+}

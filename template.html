@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>北京中轴线三维模型</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;900&display=swap" rel="stylesheet">
+<style>
+:root{ /* layout: full-bleed 3D scene; lacquer-blue plaque panels float at the edges, gold hairlines, vermilion for active state */
+  --ink:#0f1c36; --panel:rgba(15,28,54,.84); --gold:#e3bd62; --gold-dim:rgba(227,189,98,.38); --paper:#f3ecda; --mute:#b9c2d6; --cinnabar:#c8402b;
+  --display:"Noto Serif SC","Songti SC","STSong","SimSun",serif; --body:-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%;background:var(--ink);color:var(--paper);font-family:var(--body);overflow:hidden;-webkit-text-size-adjust:100%}
+#app{position:relative;height:100%;width:100%;overflow:hidden;user-select:none;-webkit-user-select:none}
+#c{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;outline:none}
+#labels{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.lab{position:absolute;left:0;top:0;opacity:0;transition:opacity .25s;white-space:nowrap;font-family:var(--display);font-weight:600;color:#fff;text-shadow:0 0 3px #0b1326,0 1px 5px #0b1326,0 0 2px #0b1326;will-change:transform}
+.lab.r1{font-size:14px;letter-spacing:.08em}.lab.r2{font-size:11.5px;color:#f6e7bd}
+.lab::after{content:"";display:block;width:1px;height:9px;margin:1px auto 0;background:rgba(255,255,255,.75)}
+.plate{background:var(--panel);border:1px solid var(--gold-dim);border-radius:4px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+#hd{position:absolute;left:12px;top:12px;padding:9px 14px 10px;max-width:calc(100% - 84px);pointer-events:none}
+#hd h1{font-family:var(--display);font-weight:900;font-size:22px;letter-spacing:.22em;color:var(--gold);line-height:1.15}
+#hd p{font-size:11px;color:var(--mute);margin-top:4px;line-height:1.5;font-variant-numeric:tabular-nums}
+#tools{position:absolute;right:12px;top:12px;display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+#tools button{width:52px;padding:7px 0 6px;font-size:12px;letter-spacing:.1em;background:var(--panel);border:1px solid var(--gold-dim);border-radius:4px;color:var(--paper);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+#tools button[aria-pressed="true"]{background:var(--cinnabar);border-color:var(--gold);color:#fff}
+#compass{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;background:var(--panel);border:1px solid var(--gold-dim);margin-top:4px}
+#needle{transform-origin:0 0}
+#bottom{position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column;gap:8px;padding:0 0 10px;pointer-events:none}
+#bottom>*{pointer-events:auto}
+#card{margin:0 12px;padding:12px 14px 12px;max-width:440px;max-height:44vh;overflow:auto;user-select:text;-webkit-user-select:text}
+#card[hidden]{display:none}
+#cKind{font-size:11px;letter-spacing:.14em;color:var(--gold)}
+#cName{font-family:var(--display);font-weight:900;font-size:22px;letter-spacing:.12em;margin:2px 0 6px;text-wrap:balance}
+#cDims{font-size:12px;color:var(--gold);line-height:1.55;font-variant-numeric:tabular-nums;padding:5px 0;border-top:1px solid var(--gold-dim);border-bottom:1px solid var(--gold-dim);margin-bottom:7px}
+#cInfo{font-size:13.5px;line-height:1.7;color:var(--paper)}
+#cGeo{font-size:11px;color:var(--mute);margin-top:6px;font-variant-numeric:tabular-nums}
+.acts{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.acts button{padding:7px 14px;font-size:13px;border-radius:3px;border:1px solid var(--gold-dim);background:transparent}
+.acts #bIn{background:var(--cinnabar);border-color:var(--gold);color:#fff;font-weight:600;letter-spacing:.08em}
+.acts [hidden]{display:none}
+#chips{display:flex;gap:6px;overflow-x:auto;padding:2px 12px;scrollbar-width:none}
+#chips::-webkit-scrollbar{display:none}
+#chips button{flex:none;padding:8px 12px;font-size:13px;font-family:var(--display);font-weight:600;letter-spacing:.06em;background:var(--panel);border:1px solid var(--gold-dim);border-radius:3px;color:var(--paper);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+#chips button.has-in::after{content:"";display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--gold);margin-left:6px;vertical-align:middle}
+#chips button[aria-pressed="true"]{background:var(--cinnabar);border-color:var(--gold);color:#fff}
+#hint{align-self:center;font-size:12px;padding:6px 12px;color:var(--paper);transition:opacity .6s}
+#hint.gone{display:none}
+#inbar{position:absolute;left:12px;top:12px;display:none;align-items:center;gap:10px;padding:8px 8px 8px 14px}
+#inName{font-family:var(--display);font-weight:900;font-size:17px;letter-spacing:.14em;color:var(--gold)}
+#bOut{padding:7px 12px;font-size:13px;background:var(--cinnabar);border:1px solid var(--gold);border-radius:3px;color:#fff}
+#app[data-mode="in"] #inbar{display:flex}
+#app[data-mode="in"] #hd,#app[data-mode="in"] #bHomeWrap{display:none}
+#veil{position:absolute;inset:0;display:grid;place-items:center;background:var(--ink);color:var(--gold);font-family:var(--display);font-size:16px;letter-spacing:.3em;padding:24px;text-align:center;line-height:1.8;transition:opacity .5s}
+#veil.gone{opacity:0;pointer-events:none}
+@media (min-width:760px){#hd h1{font-size:28px}#card{margin-left:16px}#chips{padding-left:16px}.lab.r1{font-size:16px}.lab.r2{font-size:12.5px}}
+@media (prefers-reduced-motion:reduce){.lab,#hint,#veil{transition:none}}
+</style>
+</head>
+<body>
+<div id="app" data-mode="out">
+  <canvas id="c" tabindex="0" aria-label="北京中轴线三维模型，可拖动旋转、缩放并点选建筑"></canvas>
+  <div id="labels" aria-hidden="true"></div>
+  <header id="hd" class="plate">
+    <h1>北京中轴线</h1>
+    <p>永定门 → 钟楼 · 全长约 7.8 km · 米制 1:1<br>轴线北端偏西约 2° · <span id="stat"></span></p>
+  </header>
+  <div id="inbar" class="plate"><span id="inName"></span><button id="bOut" type="button">出殿</button></div>
+  <div id="tools">
+    <button id="bCut" type="button" title="隐藏全部屋顶，俯视殿内梁柱与陈设">剖顶</button>
+    <button id="bLab" type="button" title="显示或隐藏建筑名称">标签</button>
+    <button id="bSh" type="button" title="开关日照阴影">阴影</button>
+    <button id="bHome" type="button" title="回到中轴线全景">全轴</button>
+    <button id="bFC" type="button" title="飞到故宫">故宫</button>
+    <div id="compass" title="指针指向真北">
+      <svg width="40" height="40" viewBox="-20 -20 40 40" aria-hidden="true"><g id="needle"><path d="M0-16 5 0H-5Z" fill="#c8402b"/><path d="M0 16 5 0H-5Z" fill="#b9c2d6"/><text y="-5.5" x="0" text-anchor="middle" font-size="6.5" font-weight="700" fill="#fff" font-family="sans-serif">N</text></g></svg>
+    </div>
+  </div>
+  <div id="bottom">
+    <div id="hint" class="plate">拖动旋转 · 双指或滚轮缩放 · 点按建筑查看</div>
+    <section id="card" class="plate" hidden aria-live="polite">
+      <div id="cKind"></div>
+      <h2 id="cName"></h2>
+      <p id="cDims"></p>
+      <p id="cInfo"></p>
+      <p id="cGeo"></p>
+      <div class="acts"><button id="bIn" type="button">入殿参观</button><button id="bFly" type="button">飞到此处</button><button id="bClose" type="button">关闭</button></div>
+    </section>
+    <nav id="chips" aria-label="建筑导览"></nav>
+  </div>
+  <div id="veil">正在营造中轴线……</div>
+</div>
+<script src="THREE_URL"></script>
+<script>/*APP*/</script>
+</body>
+</html>
