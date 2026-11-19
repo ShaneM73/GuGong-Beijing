@@ -1,5 +1,7 @@
 # GuGong-Beijing · 北京中轴线三维模型
 
+**English** · [中文](README.zh-CN.md)
+
 An interactive 3D model of the Forbidden City (故宫) and the whole Beijing Central Axis, from Yongdingmen in the south to the Bell Tower in the north (about 7.8 km), built at 1:1 in metres with three.js.
 
 **[Launch the model](https://shanem73.github.io/GuGong-Beijing/)**
