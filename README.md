@@ -22,10 +22,10 @@ All 15 components of the "Beijing Central Axis" World Heritage listing are model
 
 - Drag to rotate, pinch or scroll to zoom, tap a building for its name, dimensions, a short history and estimated coordinates.
 - The strip along the bottom flies to each landmark, ordered south to north.
-- Buildings marked with a gold dot can be entered (入殿参观): Hall of Supreme Harmony, Palace of Heavenly Purity, Hall of Mental Cultivation, Hall of Prayer for Good Harvests, Drum Tower and others. Interiors have the column grid, throne, screen, name plaque and coffered ceiling.
-- 剖顶 hides every roof so you can look down into the halls; 标签 toggles labels; 阴影 toggles sun shadows; 全轴 and 故宫 switch between the whole axis and the palace.
+- Buildings marked with a gold dot can be entered (Go inside): Hall of Supreme Harmony, Palace of Heavenly Purity, Hall of Mental Cultivation, Hall of Prayer for Good Harvests, Drum Tower and others. Interiors have the column grid, throne, screen, name plaque and coffered ceiling.
+- Roofs off hides every roof so you can look down into the halls; Labels and Shadows toggle names and sun shadows; Axis and Palace switch between the whole axis and the Forbidden City.
 
-The interface is in Chinese.
+The interface opens in English. Switch to 中文, 日本語 or 한국어 with the buttons under the title; the choice is remembered on that device, and `?lang=zh` (or `ja`, `ko`, `en`) in the URL opens a given language. Building names, categories, dimensions and descriptions are translated; the plaques inside the halls keep their original Chinese inscriptions.
 
 ## Accuracy
 
@@ -45,9 +45,10 @@ npm run build   # bundles src/ into index.html
 
 - `src/model.js` builds all geometry and the list of selectable sites.
 - `src/main.js` is the viewer: camera, picking, labels, interior mode, UI.
+- `src/i18n.js` holds the English, Japanese and Korean translations (Chinese is the source text in `src/model.js`) and the interface strings for all four languages.
 - `template.html` holds the page markup and styles.
 
-three.js r160 is loaded from jsDelivr; the display font is Noto Serif SC from Google Fonts.
+three.js r160 is loaded from jsDelivr; display fonts are Noto Serif SC, JP and KR from Google Fonts (JP and KR load only when chosen).
 
 ## License
 

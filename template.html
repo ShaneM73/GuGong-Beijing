@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>北京中轴线三维模型</title>
+<title>Beijing Central Axis 3D</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;900&display=swap" rel="stylesheet">
 <style>
@@ -21,15 +21,18 @@ html,body{height:100%;background:var(--ink);color:var(--paper);font-family:var(-
 .lab.r1{font-size:14px;letter-spacing:.08em}.lab.r2{font-size:11.5px;color:#f6e7bd}
 .lab::after{content:"";display:block;width:1px;height:9px;margin:1px auto 0;background:rgba(255,255,255,.75)}
 .plate{background:var(--panel);border:1px solid var(--gold-dim);border-radius:4px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
-#hd{position:absolute;left:12px;top:12px;padding:9px 14px 10px;max-width:calc(100% - 84px);pointer-events:none}
+#hd{position:absolute;left:12px;top:12px;padding:9px 14px 10px;max-width:calc(100% - 92px);pointer-events:none}
+#langs{display:flex;gap:4px;margin-top:7px;pointer-events:auto;flex-wrap:wrap}
+#langs button{padding:3px 8px;font-size:11.5px;border-radius:3px;border:1px solid var(--gold-dim);background:transparent;color:var(--mute);font-family:var(--body)}
+#langs button[aria-pressed="true"]{background:var(--cinnabar);border-color:var(--gold);color:#fff}
 #hd h1{font-family:var(--display);font-weight:900;font-size:22px;letter-spacing:.22em;color:var(--gold);line-height:1.15}
 #hd p{font-size:11px;color:var(--mute);margin-top:4px;line-height:1.5;font-variant-numeric:tabular-nums}
 #tools{position:absolute;right:12px;top:12px;display:flex;flex-direction:column;gap:6px;align-items:flex-end}
 button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
 button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
-#tools button{width:52px;padding:7px 0 6px;font-size:12px;letter-spacing:.1em;background:var(--panel);border:1px solid var(--gold-dim);border-radius:4px;color:var(--paper);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+#tools button{width:60px;padding:7px 0 6px;font-size:12px;letter-spacing:.1em;background:var(--panel);border:1px solid var(--gold-dim);border-radius:4px;color:var(--paper);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
 #tools button[aria-pressed="true"]{background:var(--cinnabar);border-color:var(--gold);color:#fff}
-#compass{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;background:var(--panel);border:1px solid var(--gold-dim);margin-top:4px}
+#compass{width:60px;height:60px;border-radius:50%;display:grid;place-items:center;background:var(--panel);border:1px solid var(--gold-dim);margin-top:4px}
 #needle{transform-origin:0 0}
 #bottom{position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column;gap:8px;padding:0 0 10px;pointer-events:none}
 #bottom>*{pointer-events:auto}
@@ -59,41 +62,49 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 #veil{position:absolute;inset:0;display:grid;place-items:center;background:var(--ink);color:var(--gold);font-family:var(--display);font-size:16px;letter-spacing:.3em;padding:24px;text-align:center;line-height:1.8;transition:opacity .5s}
 #veil.gone{opacity:0;pointer-events:none}
 @media (min-width:760px){#hd h1{font-size:28px}#card{margin-left:16px}#chips{padding-left:16px}.lab.r1{font-size:16px}.lab.r2{font-size:12.5px}}
+:lang(en) #hd h1,:lang(en) #cName,:lang(en) #inName{letter-spacing:.04em}
+:lang(en) .lab.r1{letter-spacing:.02em}
+:lang(en) #tools button,:lang(en) #chips button{letter-spacing:.02em}
+#tools button{font-size:11.5px;line-height:1.25}
+:lang(ja){--display:"Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif;--body:-apple-system,"Hiragino Sans","Yu Gothic","Noto Sans JP",system-ui,sans-serif}
+:lang(ko){--display:"Noto Serif KR","AppleMyungjo","Batang",serif;--body:-apple-system,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif}
+:lang(ja) #hd h1,:lang(ko) #hd h1{letter-spacing:.12em}
 @media (prefers-reduced-motion:reduce){.lab,#hint,#veil{transition:none}}
 </style>
 </head>
 <body>
 <div id="app" data-mode="out">
-  <canvas id="c" tabindex="0" aria-label="北京中轴线三维模型，可拖动旋转、缩放并点选建筑"></canvas>
+  <canvas id="c" tabindex="0" data-ta="canvas" aria-label="3D model of the Beijing Central Axis"></canvas>
   <div id="labels" aria-hidden="true"></div>
   <header id="hd" class="plate">
-    <h1>北京中轴线</h1>
-    <p>永定门 → 钟楼 · 全长约 7.8 km · 米制 1:1<br>轴线北端偏西约 2° · <span id="stat"></span></p>
+    <h1 data-t="title">Beijing Central Axis</h1>
+    <p><span data-t="sub1"></span><br><span data-t="sub2"></span> · <span id="stat"></span></p>
+    <div id="langs" role="group" data-ta="lang"></div>
   </header>
-  <div id="inbar" class="plate"><span id="inName"></span><button id="bOut" type="button">出殿</button></div>
+  <div id="inbar" class="plate"><span id="inName"></span><button id="bOut" type="button" data-t="out">Leave</button></div>
   <div id="tools">
-    <button id="bCut" type="button" title="隐藏全部屋顶，俯视殿内梁柱与陈设">剖顶</button>
-    <button id="bLab" type="button" title="显示或隐藏建筑名称">标签</button>
-    <button id="bSh" type="button" title="开关日照阴影">阴影</button>
-    <button id="bHome" type="button" title="回到中轴线全景">全轴</button>
-    <button id="bFC" type="button" title="飞到故宫">故宫</button>
-    <div id="compass" title="指针指向真北">
+    <button id="bCut" type="button" data-t="cut" data-tt="cutT"></button>
+    <button id="bLab" type="button" data-t="lab" data-tt="labT"></button>
+    <button id="bSh" type="button" data-t="sh" data-tt="shT"></button>
+    <button id="bHome" type="button" data-t="home" data-tt="homeT"></button>
+    <button id="bFC" type="button" data-t="fc" data-tt="fcT"></button>
+    <div id="compass" data-tt="compass">
       <svg width="40" height="40" viewBox="-20 -20 40 40" aria-hidden="true"><g id="needle"><path d="M0-16 5 0H-5Z" fill="#c8402b"/><path d="M0 16 5 0H-5Z" fill="#b9c2d6"/><text y="-5.5" x="0" text-anchor="middle" font-size="6.5" font-weight="700" fill="#fff" font-family="sans-serif">N</text></g></svg>
     </div>
   </div>
   <div id="bottom">
-    <div id="hint" class="plate">拖动旋转 · 双指或滚轮缩放 · 点按建筑查看</div>
+    <div id="hint" class="plate" data-t="hint"></div>
     <section id="card" class="plate" hidden aria-live="polite">
       <div id="cKind"></div>
       <h2 id="cName"></h2>
       <p id="cDims"></p>
       <p id="cInfo"></p>
       <p id="cGeo"></p>
-      <div class="acts"><button id="bIn" type="button">入殿参观</button><button id="bFly" type="button">飞到此处</button><button id="bClose" type="button">关闭</button></div>
+      <div class="acts"><button id="bIn" type="button" data-t="enter"></button><button id="bFly" type="button" data-t="fly"></button><button id="bClose" type="button" data-t="close"></button></div>
     </section>
-    <nav id="chips" aria-label="建筑导览"></nav>
+    <nav id="chips" data-ta="nav"></nav>
   </div>
-  <div id="veil">正在营造中轴线……</div>
+  <div id="veil">Building the Central Axis…</div>
 </div>
 <script src="THREE_URL"></script>
 <script>/*APP*/</script>

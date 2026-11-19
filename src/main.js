@@ -1,10 +1,24 @@
 import * as THREE from 'three';
 import { OrbitControls } from '../node_modules/three/examples/jsm/controls/OrbitControls.js';
 import { buildModel, DEG } from './model.js';
+import { LANGS, UI, term, info, dims } from './i18n.js';
 
 const $ = s => document.querySelector(s);
 const app = $('#app'), canvas = $('#c'), veil = $('#veil');
 const AXIS = 2.17, LAT0 = 39.9163, LON0 = 116.3907;
+const FONTS = { ja: 'Noto+Serif+JP:wght@600;900', ko: 'Noto+Serif+KR:wght@600;900' };
+let lang = (() => { const q = new URLSearchParams(location.search).get('lang'); if (UI[q]) return q; try { const v = localStorage.getItem('axis-lang'); if (UI[v]) return v; } catch (e) {} return 'en'; })();
+const ui = k => UI[lang][k];
+function staticText() {
+  document.documentElement.lang = { en: 'en', zh: 'zh-CN', ja: 'ja', ko: 'ko' }[lang];
+  if (FONTS[lang] && !document.getElementById('font-' + lang)) { const l = document.createElement('link'); l.id = 'font-' + lang; l.rel = 'stylesheet'; l.href = `https://fonts.googleapis.com/css2?family=${FONTS[lang]}&display=swap`; document.head.appendChild(l); }
+  document.querySelectorAll('[data-t]').forEach(e => e.textContent = ui(e.dataset.t));
+  document.querySelectorAll('[data-tt]').forEach(e => e.title = ui(e.dataset.tt));
+  document.querySelectorAll('[data-ta]').forEach(e => e.setAttribute('aria-label', ui(e.dataset.ta)));
+  document.querySelectorAll('#langs button').forEach(b => b.setAttribute('aria-pressed', b.dataset.l === lang));
+}
+{ const box = document.querySelector('#langs'); for (const [k, lbl] of LANGS) { const b = document.createElement('button'); b.type = 'button'; b.dataset.l = k; b.textContent = lbl; b.lang = k; box.appendChild(b); } }
+staticText();
 const calm = matchMedia('(prefers-reduced-motion: reduce)').matches, coarse = matchMedia('(pointer:coarse)').matches;
 
 function start() {
@@ -28,7 +42,7 @@ function start() {
 
   const controls = new OrbitControls(camera, canvas);
   controls.enableDamping = !calm; controls.dampingFactor = .09; controls.zoomSpeed = 1.1; controls.rotateSpeed = .6; controls.screenSpacePanning = false;
-  let dirty = true, mode = 'out', cur = null, fly = null, showLabels = true;
+  let dirty = true, mode = 'out', cur = null, fly = null, showLabels = true, inSite = null;
   controls.addEventListener('change', () => dirty = true);
   const outLimits = () => { controls.minDistance = 14; controls.maxDistance = 15000; controls.minPolarAngle = 0; controls.maxPolarAngle = Math.PI / 2 - .04; controls.enablePan = true; camera.near = 2; camera.fov = 42; camera.updateProjectionMatrix(); };
   outLimits();
@@ -38,7 +52,7 @@ function start() {
   function flyTo([p, t], done) { fly = { p0: camera.position.clone(), t0: controls.target.clone(), p1: p, t1: t, s: performance.now(), dur: calm ? 1 : 1300, done }; controls.enabled = false; }
 
   /* ---- labels ---- */
-  const labelsEl = $('#labels'), labs = sites.filter(s => s.rank).map(s => { const e = document.createElement('span'); e.textContent = s.name; e.className = 'lab r' + s.rank; labelsEl.appendChild(e); return { s, e, on: false }; });
+  const labelsEl = $('#labels'), labs = sites.filter(s => s.rank).map(s => { const e = document.createElement('span'); e.className = 'lab r' + s.rank; labelsEl.appendChild(e); return { s, e, on: false }; });
   const v = new THREE.Vector3();
   function updateLabels() {
     const w = app.clientWidth, h = app.clientHeight, show = showLabels && mode === 'out';
@@ -57,20 +71,19 @@ function start() {
   function geo(s) {
     const a = AXIS * DEG, E = s.x * Math.cos(a) - s.n * Math.sin(a), N = s.x * Math.sin(a) + s.n * Math.cos(a);
     const lat = LAT0 + N / 111320, lon = LON0 + E / (111320 * Math.cos(LAT0 * DEG));
-    const off = Math.abs(s.x) < 1 ? '位于中轴线上' : `中轴线以${s.x > 0 ? '东' : '西'} ${Math.abs(s.x).toFixed(0)} m`;
-    return `约 ${lat.toFixed(4)}°N，${lon.toFixed(4)}°E · ${off}`;
+    return ui('geo')(lat.toFixed(4), lon.toFixed(4), Math.abs(s.x) < 1 ? 0 : Math.round(s.x));
   }
   function select(s, move = true) {
     cur = s; card.hidden = false; $('#hint').classList.add('gone');
-    $('#cKind').textContent = s.kind || '宫殿建筑'; $('#cName').textContent = s.name; $('#cDims').textContent = s.dims || ''; $('#cDims').hidden = !s.dims;
-    $('#cInfo').textContent = s.info || ''; $('#cInfo').hidden = !s.info; $('#cGeo').textContent = geo(s); $('#bIn').hidden = !s.inside;
+    $('#cKind').textContent = term(s.kind || '宫殿建筑', lang); $('#cName').textContent = term(s.name, lang); const dm = dims(s, lang), inf = info(s, lang); $('#cDims').textContent = dm; $('#cDims').hidden = !dm;
+    $('#cInfo').textContent = inf; $('#cInfo').hidden = !inf; $('#cGeo').textContent = geo(s); $('#bIn').hidden = !s.inside;
     hl.box.set(new THREE.Vector3(s.x - s.hw, s.y0, -s.n - s.hd), new THREE.Vector3(s.x + s.hw, s.y0 + s.h, -s.n + s.hd)); hl.visible = mode === 'out';
     document.querySelectorAll('#chips button').forEach(b => b.setAttribute('aria-pressed', b.dataset.n === s.name));
     if (move) flyTo(viewOf(s)); dirty = true;
   }
   function deselect() { cur = null; card.hidden = true; hl.visible = false; document.querySelectorAll('#chips button').forEach(b => b.setAttribute('aria-pressed', 'false')); dirty = true; }
   function enter(s) {
-    mode = 'in'; app.dataset.mode = 'in'; hl.visible = false; card.hidden = true; $('#inName').textContent = s.name + ' · 殿内';
+    mode = 'in'; app.dataset.mode = 'in'; hl.visible = false; card.hidden = true; inSite = s; $('#inName').textContent = term(s.name, lang) + ui('inside');
     camera.near = .25; camera.fov = camera.aspect < 1 ? 82 : 62; camera.updateProjectionMatrix(); controls.enablePan = false;
     controls.minDistance = 1.2; controls.maxDistance = s.inside.R + .4; controls.minPolarAngle = Math.PI / 2 - .55; controls.maxPolarAngle = Math.PI / 2 + .45;
     lamp.position.copy(s.inside.t); lamp.position.y += 2.5; lamp.intensity = 16;
@@ -96,7 +109,7 @@ function start() {
   /* ---- UI ---- */
   const order = ['永定门', '先农坛', '太岁殿', '天坛', '圜丘', '皇穹宇 · 回音壁', '祈年殿', '南段道路遗存', '正阳门箭楼', '正阳门', '天安门广场', '毛主席纪念堂', '人民英雄纪念碑', '人民大会堂', '中国国家博物馆', '外金水桥', '天安门', '社稷坛 · 五色土', '太庙享殿', '端门', '故宫', '午门', '内金水桥', '太和门', '太和殿', '中和殿', '保和殿', '乾清门', '乾清宫', '交泰殿', '坤宁宫', '御花园', '神武门', '景山 · 万春亭', '万宁桥', '鼓楼', '钟楼', '养心殿', '储秀宫', '皇极殿', '九龙壁', '畅音阁', '文华殿', '文渊阁', '武英殿', '慈宁宫', '雨花阁', '西北角楼', '东华门'];
   const chips = $('#chips');
-  for (const nme of order) { const s = sites.find(x => x.name === nme); if (!s) continue; const b = document.createElement('button'); b.type = 'button'; b.textContent = nme.replace('景山 · ', '').replace(' · 回音壁', '').replace(' · 五色土', '').replace('太庙享殿', '太庙').replace('南段道路遗存', '南段道路'); b.dataset.n = nme; b.setAttribute('aria-pressed', 'false'); if (s.inside) b.classList.add('has-in'); b.onclick = () => { if (mode === 'in') { mode = 'out'; app.dataset.mode = 'out'; lamp.intensity = 0; outLimits(); } select(s); }; chips.appendChild(b); }
+  for (const nme of order) { const s = sites.find(x => x.name === nme); if (!s) continue; const b = document.createElement('button'); b.type = 'button'; b.dataset.n = nme; b.setAttribute('aria-pressed', 'false'); if (s.inside) b.classList.add('has-in'); b.onclick = () => { if (mode === 'in') { mode = 'out'; app.dataset.mode = 'out'; lamp.intensity = 0; outLimits(); } select(s); }; chips.appendChild(b); }
   const tog = (id, fn, init) => { const b = $(id); let on = init; b.setAttribute('aria-pressed', on); b.onclick = () => { on = !on; b.setAttribute('aria-pressed', on); fn(on); dirty = true; }; fn(on); };
   tog('#bCut', on => { roof.visible = !on; }, false);
   tog('#bLab', on => { showLabels = on; }, true);
@@ -106,7 +119,17 @@ function start() {
   $('#bIn').onclick = () => cur && cur.inside && enter(cur);
   $('#bFly').onclick = () => cur && flyTo(viewOf(cur));
   $('#bClose').onclick = deselect; $('#bOut').onclick = leave;
-  $('#stat').textContent = `${sites.length} 处可点选建筑 · ${(tris / 1000).toFixed(0)}k 三角面`;
+  const CHIP = { '景山 · 万春亭': '景山', '皇穹宇 · 回音壁': '皇穹宇', '社稷坛 · 五色土': '社稷坛', '太庙享殿': '太庙' };
+  function applyLang() {
+    staticText();
+    $('#stat').textContent = ui('stat')(sites.length, (tris / 1000).toFixed(0));
+    for (const l of labs) l.e.textContent = term(l.s.name, lang);
+    document.querySelectorAll('#chips button').forEach(b => b.textContent = term(CHIP[b.dataset.n] || b.dataset.n, lang));
+    if (cur) select(cur, false); if (mode === 'in') { card.hidden = true; if (inSite) $('#inName').textContent = term(inSite.name, lang) + ui('inside'); }
+    dirty = true;
+  }
+  document.querySelectorAll('#langs button').forEach(b => b.onclick = () => { lang = b.dataset.l; try { localStorage.setItem('axis-lang', lang); } catch (e) {} applyLang(); });
+  applyLang();
 
   function resize() { const w = app.clientWidth, h = app.clientHeight; if (!w || !h) return; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); dirty = true; }
   new ResizeObserver(resize).observe(app); resize();
@@ -124,6 +147,6 @@ function start() {
       renderer.render(scene, camera); updateLabels(); }
   }
   requestAnimationFrame(loop);
-  veil.classList.add('gone'); window.__ready = true;
+  window.__sites = sites; veil.classList.add('gone'); window.__ready = true;
 }
-requestAnimationFrame(() => setTimeout(() => { try { start(); } catch (e) { console.error(e); veil.textContent = '模型加载失败：此设备或浏览器可能不支持 WebGL。请换用较新的浏览器再试。'; window.__err = String(e && e.stack || e); } }, 30));
+requestAnimationFrame(() => setTimeout(() => { try { start(); } catch (e) { console.error(e); veil.textContent = ui('err'); window.__err = String(e && e.stack || e); } }, 30));
